@@ -8,4 +8,4 @@ api = Api(
     description='команда "Крафтовый код"',
 )
 
-api.add_namespace(ns1)
+api.add_namespace(ns1, '/api')

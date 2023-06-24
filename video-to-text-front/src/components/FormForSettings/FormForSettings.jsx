@@ -1,22 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './FormForSettings.css';
 import { InputTime } from '../InputTime/InputTime';
 import { FormButton } from '../FormButton/FormButton';
 import { useFormWithValidation } from '../../hooks/useFormValidation';
 
-export function FormForSettings({ fetchAcrticle }) {
+export function FormForSettings({ fetchAcrticle, videoData }) {
   const [values, errors, isValid, handleChange] = useFormWithValidation();
+  const [fromStart, setFromStart] = useState(false);
+  const [tillEnd, setTillEnd] = useState(false);
 
   const handleSubmit = (event) => {
     const settings = {
-      timeStart: values.timeStart,
-      timeEnd: values.timeEnd,
+      timeStart: fromStart ? '00:00:00' : values.timeStart,
+      timeEnd: tillEnd ? videoData.fullLength : values.timeEnd,
       annotationLength: values.annotationLength,
       articleLength: values.articleLength,
       secondsForScreenshot: values.secondsForScreenshot,
     };
     event.preventDefault();
-    fetchAcrticle(settings)
+    fetchAcrticle(settings);
   };
 
   return (
@@ -29,22 +31,46 @@ export function FormForSettings({ fetchAcrticle }) {
             <InputTime
               id='video-link'
               name='timeStart'
-              value={values.timeStart ? values.timeStart : ''}
+              value={
+                fromStart
+                  ? '00:00:00'
+                  : values.timeStart
+                  ? values.timeStart
+                  : ''
+              }
               onChange={handleChange}
+              disabled={fromStart ? true : false}
             />
             <span>{errors.timeStart}</span>
             <label htmlFor='from-start'>с начала</label>
-            <input id='from-start' type='checkbox'></input>
+            <input
+              id='from-start'
+              type='checkbox'
+              value={fromStart}
+              onChange={() => setFromStart(!fromStart)}
+            ></input>
             <label htmlFor='video-end'>Конец</label>
             <InputTime
               id='video-end'
               name='timeEnd'
-              value={values.timeEnd ? values.timeEnd : ''}
+              value={
+                tillEnd
+                  ? videoData.fullLength
+                  : values.timeEnd
+                  ? values.timeEnd
+                  : ''
+              }
               onChange={handleChange}
+              disabled={tillEnd ? true : false}
             />
             <span>{errors.timeEnd}</span>
             <label htmlFor='from-end'>до конца</label>
-            <input id='from-end' type='checkbox'></input>
+            <input
+              id='from-end'
+              type='checkbox'
+              value={tillEnd}
+              onChange={() => setTillEnd(!tillEnd)}
+            ></input>
           </li>
           <li>
             <label htmlFor='annotation'>Длина аннотации</label>

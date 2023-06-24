@@ -1,40 +1,25 @@
 import datetime
 import os
+import shutil
 
 import pytube
 import pywhisper
-import static_ffmpeg
 import yt_dlp
 from moviepy.editor import VideoFileClip
 
-from paragraphs_generator import paragraphs_generator
-from screenshots_generator import screenshots_generator
-from timecode_generator import timecode_generator
+from processing_features.processing_meta import get_video_meta
+from processing_features.processing_paragraphs import get_text_paragraphs
+from processing_features.processing_timecodes import get_text_timecodes
 
 
-def format_timedelta(td):
-    """Служебная функция для классного форматирования объектов timedelta (например, 00:00:20.05)
-    исключая микросекунды и сохраняя миллисекунды"""
-    result = str(td)
-    try:
-        result, ms = result.split(".")
-    except ValueError:
-        return result + ".00"
-    ms = int(ms)
-    ms = round(ms / 1e4)
-    return f"{result}.{ms:00}"
-
-
-def download_video_dlp(url):
+def download_video(url):
     ydl_opts = {
         'format': 'bestvideo[height<=720]+bestaudio/best',
-        'outtmpl': '%(title)s.%(ext)s',
+        'outtmpl': 'download_video/%(title)s/%(title)s.%(ext)s',
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=True)
         downloaded_file_path = ydl.prepare_filename(info_dict)
-    print(
-        f"Видео {downloaded_file_path} успешно загружено!")
 
     return downloaded_file_path
 
@@ -45,27 +30,14 @@ def convert_to_mp3(filename):
     clip.close()
 
 
-def audio_to_text(filename):
-    model = pywhisper.load_model("base")
-    result = model.transcribe(filename)
-    print(result["text"])
-    sonic = result["text"]
-    return sonic
-
-
 def main(link, model):
-    print('''
-    This tool will convert Youtube videos to mp3 files and then transcribe them to text using Whisper.
-    ''')
+    print('Convert Youtube videos to mp3 files and then transcribe them to text using Whisper.')
     print("URL: " + link)
     print("MODEL: " + model)
-    # FFMPEG installed on first use.
-    print("Initializing FFMPEG...")
-    static_ffmpeg.add_paths()
-
     print("Downloading video... Please wait.")
+
     try:
-        filename = download_video_dlp(pytube.YouTube(link).watch_url)
+        filename = download_video(pytube.YouTube(link).watch_url)
         print("Downloaded video as " + filename)
     except:
         print("Not a valid link...")
@@ -82,27 +54,17 @@ def main(link, model):
         mymodel = pywhisper.load_model(model)
         result = mymodel.transcribe(filename[:-5] + ".mp3")
 
-        paragraphs = paragraphs_generator(result["text"])
+        metadata = get_video_meta(filename)
+        text_paragraphs, text_sentences = get_text_paragraphs(result["text"])
+        pwt, swt = get_text_timecodes(text_paragraphs, text_sentences, result['segments'])
 
-        timecodes = timecode_generator(paragraphs, result['segments'])
+        data = dict()
+        data["metadata"] = metadata
+        data["paragraphs"] = text_paragraphs
+        data["sentences"] = text_sentences
 
-        screenshots = screenshots_generator(filename, timecodes)
-
-        data = {}
-
-        for items in timecodes:
-            data.update({
-                items: {
-                    "title": filename[:-5],
-                    "start": format_timedelta(datetime.timedelta(seconds=timecodes[items]['start'])),
-                    "end": format_timedelta(datetime.timedelta(seconds=timecodes[items]['end'])),
-                    "text": paragraphs[int(items)],
-                    "screenshot": screenshots[items]
-                },
-            })
-
-        os.remove(filename)
-        os.remove(filename[:-5] + ".mp3")
+        video_path = os.path.basename(os.path.dirname(os.path.abspath(filename)))
+        shutil.rmtree('download_video/' + video_path)
 
         print("Removed video and audio files")
         print("Done!")
