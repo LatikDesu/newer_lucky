@@ -39,6 +39,7 @@ def get_timecodes(text_lines, subtitles):
 def timecode_to_text(timecodes, text_lines):
     for index in text_lines:
         text_lines[index].update({
+            "id": index,
             "start": timecodes[index]['start'],
             "end": timecodes[index]['end'],
         })
