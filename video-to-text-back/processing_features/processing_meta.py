@@ -3,7 +3,7 @@ import os
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 
-def get_video_meta(filename):
+def get_video_meta(filename, url):
     metadata = {
         "title": None,
         "duration": None,
@@ -16,6 +16,7 @@ def get_video_meta(filename):
         clip = VideoFileClip(filename)
 
         metadata = {
+            "link": url,
             "title": os.path.splitext(os.path.basename(clip.filename))[0],
             "duration": clip.duration,
             "fps": clip.fps,

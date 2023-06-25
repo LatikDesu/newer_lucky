@@ -63,7 +63,7 @@ def main(link, model):
         mymodel = pywhisper.load_model(model)
         result = mymodel.transcribe(filename.split('.')[0] + ".mp3")
 
-        metadata = get_video_meta(filename)
+        metadata = get_video_meta(filename, pytube.YouTube(link).watch_url)
         text_paragraphs, text_sentences = get_text_paragraphs(result["text"])
         pwt, swt = get_text_timecodes(text_paragraphs, text_sentences, result['segments'])
 
