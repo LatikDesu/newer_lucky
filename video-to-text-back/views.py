@@ -1,10 +1,10 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, Response
 from main_compiler import main
 
 bp = Blueprint('editor', __name__)
 
 
-@bp.route('/editor', methods=["GET", "POST"])
+@bp.route('/', methods=["GET", "POST"])
 def index():
     errors = ""
     if request.method == "POST":
@@ -20,3 +20,15 @@ def index():
             result = main(link, model)
             return render_template("home.html", result=result)
     return render_template("home.html", errors=errors)
+
+
+def flask_logger():
+    with open("static/job.log", encoding="utf-8") as log_info:
+        data = log_info.read()
+        yield data.encode()
+    open("static/job.log", 'w').close()
+
+
+@bp.route('/logs', methods=["GET"])
+def stream():
+    return Response(flask_logger(), mimetype="text/plain", content_type="text/event-stream")

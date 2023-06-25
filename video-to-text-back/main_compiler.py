@@ -5,6 +5,7 @@ import shutil
 import pytube
 import pywhisper
 import yt_dlp
+from loguru import logger
 from moviepy.editor import VideoFileClip
 
 from processing_features.processing_meta import get_video_meta
@@ -26,7 +27,7 @@ def download_video(url):
 
 def convert_to_mp3(filename):
     clip = VideoFileClip(filename)
-    clip.audio.write_audiofile(filename[:-5] + ".mp3")
+    clip.audio.write_audiofile(filename.split('.')[0] + ".mp3")
     clip.close()
 
 
@@ -36,23 +37,31 @@ def main(link, model):
     print("MODEL: " + model)
     print("Downloading video... Please wait.")
 
+    logger.info(f"Запуск...")
+    logger.info("URL: " + link)
+    logger.info("MODEL: " + model)
+    logger.info(f"Загрузка видео...")
+
     try:
         filename = download_video(pytube.YouTube(link).watch_url)
         print("Downloaded video as " + filename)
     except:
         print("Not a valid link...")
+        logger.info("Ошибка ссылки...")
         return
 
     try:
         convert_to_mp3(filename)
         print("Converted video to mp3")
+        logger.info("Конвертация видео в mp3")
     except:
         print("Error converting video to mp3")
+        logger.info("Ошибка конвертации видео в mp3...")
         return
 
     try:
         mymodel = pywhisper.load_model(model)
-        result = mymodel.transcribe(filename[:-5] + ".mp3")
+        result = mymodel.transcribe(filename.split('.')[0] + ".mp3")
 
         metadata = get_video_meta(filename)
         text_paragraphs, text_sentences = get_text_paragraphs(result["text"])
@@ -68,9 +77,12 @@ def main(link, model):
 
         print("Removed video and audio files")
         print("Done!")
+        logger.info("Удаляем видео и аудио файлы...")
+        logger.info("Готово!")
         return data
     except Exception as e:
         print("Error transcribing audio to text")
+        logger.info("Ошибка преобразования аудио в текст...")
         print(e)
         return
 

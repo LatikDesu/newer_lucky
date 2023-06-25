@@ -1,7 +1,9 @@
 import math
+import datetime
 
 import nltk
 import numpy as np
+from loguru import logger
 from scipy.signal import argrelextrema
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -24,8 +26,9 @@ def activate_similarities(similarities: np.array, p_size=10) -> np.array:
 
 
 def get_text_paragraphs(data: str):
+    logger.info(f"Разбиваем на предложения...")
     sentences = nltk.sent_tokenize(data)
-    print(f'Loaded Text String ({len(sentences)} sentences)')
+    logger.info(f'Получено {len(sentences)} предложений.')
 
     model = SentenceTransformer('all-mpnet-base-v2')
 
@@ -53,6 +56,8 @@ def get_text_paragraphs(data: str):
     for each in sentences:
         sentence = {'text': each}
         text_sentences[sentences.index(each)] = sentence
+
+    logger.info(f'Сформировано {len(text_paragraphs)} абзацев.')
 
     return text_paragraphs, text_sentences
 

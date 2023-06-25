@@ -1,3 +1,6 @@
+from loguru import logger
+
+
 def get_subtitles(data):
     subtitles = {}
 
@@ -47,12 +50,19 @@ def timecode_to_text(timecodes, text_lines):
 
 
 def get_text_timecodes(text_paragraphs, text_sentences, data):
+    logger.info("Получаем субтитры...")
     subtitles = get_subtitles(data)
 
+    logger.info("Получаем время параграфов...")
     p_timecodes = get_timecodes(text_paragraphs, subtitles)
+
+    logger.info("Получаем время предложений...")
     s_timecodes = get_timecodes(text_sentences, subtitles)
 
+    logger.info("Создаем субтитры к параграфам...")
     pwt = timecode_to_text(p_timecodes, text_paragraphs)
+
+    logger.info("Приделали субтитры к предложениям...")
     swt = timecode_to_text(s_timecodes, text_sentences)
 
     return pwt, swt
